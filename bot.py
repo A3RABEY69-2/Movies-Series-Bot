@@ -1,3 +1,4 @@
+from aiohttp import web
 import os
 import random
 from datetime import datetime
@@ -7,6 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -84,3 +86,22 @@ async def recommend(ctx, media_type: str = 'movie', count: int = 1):
 
 if __name__ == '__main__':
     bot.run(DISCORD_TOKEN)
+    
+async def handle_ping(request):
+    return web.Response(text="OK")
+
+async def start_webserver():
+    app = web.Application()
+    app.add_routes([web.get('/', handle_ping)])
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.getenv('PORT', 3000))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"Webserver running on port {port}")
+
+@bot.event
+async def on_ready():
+    # existing on_ready contents…
+    # then start webserver:
+    bot.loop.create_task(start_webserver())
